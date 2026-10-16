@@ -1,0 +1,36 @@
+[package]
+name = "openplant"
+version = "0.1.0"
+edition = "2024"
+description = "OpenPlant: StarUML / draw.io alternative with a native GPUI interface"
+license = "AGPL-3.0-or-later"
+
+[[bin]]
+name = "openplant"
+path = "src/main.rs"
+
+[dependencies]
+gpui-kit = "0.7.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+resvg = "0.46"
+ureq = { version = "3", features = ["json"] }
+
+[dev-dependencies]
+# Headless UI tests. gpui-kit's own `test-support` feature can't be used: its
+# weak `gpui-fast*` deps drag a conflicting crate family into Cargo.lock.
+gpui = { package = "gpui-pre", version = "=0.3.9", features = ["test-support"] }
+gpui-base = { version = "0.7.3", features = ["test-support"] }
+gpui-component = { version = "0.7.3", features = ["test-support"] }
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 2
+
+[profile.release]
+lto = "thin"
+codegen-units = 4
+strip = true

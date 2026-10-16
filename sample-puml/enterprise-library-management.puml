@@ -1,0 +1,328 @@
+@startuml Enterprise_Library_Management
+
+title Enterprise Library Management System\nDistributed Architecture & Business Workflow
+
+left to right direction
+
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam defaultFontName Monospaced
+skinparam linetype ortho
+skinparam ArrowColor #475569
+skinparam ArrowThickness 1.2
+skinparam packageStyle rectangle
+
+skinparam rectangle {
+    BackgroundColor #F8FAFC
+    BorderColor #334155
+    FontColor #0F172A
+}
+
+skinparam package {
+    BackgroundColor #F1F5F9
+    BorderColor #64748B
+    FontColor #0F172A
+}
+
+skinparam database {
+    BackgroundColor #DBEAFE
+    BorderColor #2563EB
+}
+
+skinparam actor {
+    BackgroundColor #FEF3C7
+    BorderColor #D97706
+}
+
+skinparam note {
+    BackgroundColor #FEFCE8
+    BorderColor #CA8A04
+}
+
+' ==========================================
+' 1. CLIENT LAYER
+' ==========================================
+
+package "Client Layer" {
+    actor Student
+    actor Librarian
+    actor Administrator
+    actor "Library Manager" as Manager
+
+    rectangle "Web Application\nNext.js" as Web
+    rectangle "Mobile Application" as Mobile
+
+    Student --> Web
+    Student --> Mobile
+    Librarian --> Web
+    Administrator --> Web
+    Manager --> Web
+}
+
+' ==========================================
+' 2. EDGE AND SECURITY LAYER
+' ==========================================
+
+package "Edge and Security Layer" {
+    rectangle "Content Delivery Network\nCDN / WAF" as CDN
+    rectangle "API Gateway" as Gateway
+    rectangle "Rate Limiter" as RateLimiter
+    rectangle "Identity Provider\nOAuth2 / OIDC" as Identity
+}
+
+Web --> CDN : HTTPS
+Mobile --> CDN : HTTPS
+CDN --> Gateway : API requests
+Gateway --> RateLimiter : Check quota
+Gateway --> Identity : Validate identity
+
+' ==========================================
+' 3. APPLICATION LAYER
+' ==========================================
+
+package "Application Services" {
+
+    rectangle "Backend API / BFF" as BFF
+
+    package "Core Domain Services" {
+        rectangle "User Service" as UserService
+        rectangle "Catalog Service" as CatalogService
+        rectangle "Circulation Service" as Circulation
+        rectangle "Reservation Service" as Reservation
+        rectangle "Fine Management Service" as FineService
+        rectangle "Membership Service" as Membership
+        rectangle "Reporting Service" as Reporting
+    }
+
+    package "Supporting Services" {
+        rectangle "Search Service" as SearchService
+        rectangle "Notification Service" as Notification
+        rectangle "Document Service" as Document
+        rectangle "Audit Service" as Audit
+    }
+}
+
+RateLimiter --> BFF : Forward authorized request
+
+BFF --> UserService
+BFF --> CatalogService
+BFF --> Circulation
+BFF --> Reservation
+BFF --> FineService
+BFF --> Membership
+BFF --> Reporting
+
+CatalogService --> SearchService
+Circulation --> Audit
+Reservation --> Audit
+FineService --> Audit
+Membership --> Audit
+UserService --> Audit
+
+Circulation --> Notification
+Reservation --> Notification
+FineService --> Notification
+Membership --> Document
+Reporting --> Document
+
+' ==========================================
+' 4. DATA LAYER
+' ==========================================
+
+package "Data Layer" {
+    database "User Database" as UserDB
+    database "Catalog Database" as CatalogDB
+    database "Loan Database" as LoanDB
+    database "Reservation Database" as ReservationDB
+    database "Finance Database" as FinanceDB
+    database "Membership Database" as MembershipDB
+
+    rectangle "Redis Cache" as Redis
+    rectangle "Search Index" as SearchIndex
+    rectangle "Object Storage\nPDF and Documents" as ObjectStorage
+}
+
+UserService --> UserDB
+CatalogService --> CatalogDB
+Circulation --> LoanDB
+Reservation --> ReservationDB
+FineService --> FinanceDB
+Membership --> MembershipDB
+
+CatalogService --> Redis : Read / write cache
+BFF --> Redis : Cache lookup
+SearchService --> SearchIndex : Search queries
+Document --> ObjectStorage : Store / retrieve files
+
+' ==========================================
+' 5. EVENT BUS AND BACKGROUND WORKERS
+' ==========================================
+
+package "Messaging and Background Processing" {
+    queue "Domain Event Bus" as EventBus
+
+    rectangle "Notification Worker" as NotifyWorker
+    rectangle "Overdue Monitoring Worker" as OverdueWorker
+    rectangle "Fine Calculation Worker" as FineWorker
+    rectangle "Report Generation Worker" as ReportWorker
+}
+
+Circulation --> EventBus : LoanCreated
+Reservation --> EventBus : ReservationCreated
+FineService --> EventBus : FineIssued
+Membership --> EventBus : MembershipExpired
+
+EventBus --> NotifyWorker
+EventBus --> OverdueWorker
+EventBus --> FineWorker
+EventBus --> ReportWorker
+
+NotifyWorker --> Notification
+OverdueWorker --> LoanDB
+FineWorker --> FinanceDB
+ReportWorker --> Reporting
+
+' ==========================================
+' 6. EXTERNAL INTEGRATIONS
+' ==========================================
+
+package "External Systems" {
+    rectangle "University SSO" as SSO
+    rectangle "Academic Information System" as Academic
+    rectangle "Email Provider" as Email
+    rectangle "Payment Gateway" as Payment
+}
+
+Identity --> SSO : Federated authentication
+Membership --> Academic : Verify student status
+Notification --> Email : Send email
+FineService --> Payment : Process payment
+
+' ==========================================
+' 7. BUSINESS USE CASES
+' ==========================================
+
+package "Business Workflow" {
+
+    usecase "Register Account" as UC_Register
+    usecase "Authenticate User" as UC_Login
+    usecase "Search Books" as UC_Search
+    usecase "Check Availability" as UC_Availability
+    usecase "Borrow Book" as UC_Borrow
+    usecase "Validate Loan Limit" as UC_Limit
+    usecase "Validate Membership" as UC_ValidateMember
+    usecase "Return Book" as UC_Return
+    usecase "Calculate Fine" as UC_CalculateFine
+    usecase "Pay Fine" as UC_PayFine
+    usecase "Reserve Book" as UC_Reserve
+    usecase "Generate Reports" as UC_Report
+    usecase "Print Clearance Letter" as UC_Clearance
+    usecase "Close Membership" as UC_CloseMembership
+}
+
+Student --> UC_Register
+Student --> UC_Login
+Student --> UC_Search
+Student --> UC_Borrow
+Student --> UC_Return
+Student --> UC_PayFine
+Student --> UC_Reserve
+Student --> UC_Clearance
+
+Librarian --> UC_Borrow
+Librarian --> UC_Return
+Librarian --> UC_Clearance
+
+Administrator --> UC_Report
+Administrator --> UC_CloseMembership
+Manager --> UC_Report
+
+UC_Borrow ..> UC_Availability : <<include>>
+UC_Borrow ..> UC_Limit : <<include>>
+UC_Borrow ..> UC_ValidateMember : <<include>>
+
+UC_Return ..> UC_CalculateFine : <<include>>
+UC_PayFine ..> UC_CalculateFine : <<extend>>
+
+UC_Reserve ..> UC_Availability : <<include>>
+UC_Clearance ..> UC_CloseMembership : <<include>>
+
+' ==========================================
+' 8. DOMAIN RULES
+' ==========================================
+
+note right of Circulation
+    Loan Business Rules
+
+    1. Maximum 2 books per loan
+    2. Return deadline is 14 days
+    3. Check book availability
+    4. Validate active membership
+    5. Record borrowing transactions
+    6. Check overdue status on return
+end note
+
+note right of Membership
+    Membership Lifecycle
+
+    1. Verify student status
+    2. Track membership expiration
+    3. Validate graduation status
+    4. Generate clearance letter
+    5. Close expired membership
+end note
+
+note bottom of EventBus
+    Asynchronous domain events
+
+    LoanCreated
+    BookReturned
+    ReservationCreated
+    FineIssued
+    MembershipExpired
+end note
+
+note bottom of LoanDB
+    Data Integrity
+
+    - Persist loan records
+    - Track due dates
+    - Prevent invalid borrowing
+    - Maintain transaction history
+end note
+
+' ==========================================
+' 9. OBSERVABILITY
+' ==========================================
+
+package "Observability and Operations" {
+    rectangle "Centralized Logging" as Logging
+    rectangle "Metrics Collection" as Metrics
+    rectangle "Distributed Tracing" as Tracing
+    rectangle "Alerting System" as Alerting
+}
+
+BFF --> Logging : Application logs
+Circulation --> Metrics : Business metrics
+Gateway --> Tracing : Request traces
+Metrics --> Alerting : Threshold alerts
+
+' ==========================================
+' 10. ARCHITECTURE LEGEND
+' ==========================================
+
+legend bottom
+    |= Component |= Responsibility |
+    | Client Layer | User interface |
+    | Edge and Security | Authentication and routing |
+    | Application Services | Business logic |
+    | Data Layer | Persistent storage |
+    | Event Bus | Asynchronous communication |
+    | External Systems | Third-party integrations |
+    | Observability | Logs, metrics and traces |
+endlegend
+
+@enduml

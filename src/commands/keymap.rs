@@ -1,0 +1,77 @@
+//! draw.io-compatible keymap.
+
+use super::*;
+use gpui_kit::{App, KeyBinding};
+
+pub fn bind_keys(cx: &mut App) {
+    let c = Some(CANVAS);
+    let r = Some(ROOT);
+    cx.bind_keys([
+        // Global (draw.io File / View).
+        KeyBinding::new("ctrl-n", NewProject, r),
+        KeyBinding::new("ctrl-o", OpenFile, r),
+        KeyBinding::new("ctrl-s", SaveFile, r),
+        KeyBinding::new("ctrl-shift-s", SaveAs, r),
+        KeyBinding::new("ctrl-q", Quit, r),
+        KeyBinding::new("ctrl-z", Undo, r),
+        KeyBinding::new("ctrl-shift-z", Redo, r),
+        KeyBinding::new("ctrl-y", Redo, r),
+        KeyBinding::new("ctrl-=", ZoomIn, r),
+        KeyBinding::new("ctrl-+", ZoomIn, r),
+        KeyBinding::new("ctrl-shift-=", ZoomIn, r),
+        KeyBinding::new("ctrl--", ZoomOut, r),
+        KeyBinding::new("ctrl-0", ResetView, r),
+        KeyBinding::new("ctrl-shift-h", FitWindow, r),
+        KeyBinding::new("ctrl-j", FitWindow, r),
+        KeyBinding::new("ctrl-shift-g", ToggleGrid, r),
+        KeyBinding::new("ctrl-shift-o", ToggleOutline, r),
+        KeyBinding::new("ctrl-shift-p", ToggleFormat, r),
+        KeyBinding::new("ctrl-shift-k", ToggleShapes, r),
+        KeyBinding::new("f1", Palette, r),
+        KeyBinding::new("ctrl-/", Shortcuts, r),
+        // Diagram editing: only while the canvas has focus, so typing in a
+        // field never edits the diagram.
+        KeyBinding::new("ctrl-x", Cut, c),
+        KeyBinding::new("ctrl-c", Copy, c),
+        KeyBinding::new("ctrl-v", Paste, c),
+        KeyBinding::new("ctrl-d", Duplicate, c),
+        KeyBinding::new("ctrl-enter", Duplicate, c),
+        KeyBinding::new("delete", DeleteSel, c),
+        KeyBinding::new("backspace", DeleteSel, c),
+        KeyBinding::new("ctrl-delete", DeleteAll, c),
+        KeyBinding::new("ctrl-backspace", DeleteAll, c),
+        KeyBinding::new("ctrl-a", SelectAll, c),
+        KeyBinding::new("ctrl-shift-a", SelectNone, c),
+        KeyBinding::new("ctrl-shift-i", SelectVertices, c),
+        KeyBinding::new("ctrl-shift-e", SelectEdges, c),
+        KeyBinding::new("tab", SelectNext, c),
+        KeyBinding::new("shift-tab", SelectPrev, c),
+        KeyBinding::new("f2", EditLabel, c),
+        KeyBinding::new("enter", EditLabel, c),
+        KeyBinding::new("escape", Cancel, c),
+        KeyBinding::new("home", ResetView, c),
+        KeyBinding::new("ctrl-shift-f", ToFront, c),
+        KeyBinding::new("ctrl-shift-b", ToBack, c),
+        KeyBinding::new("ctrl-alt-shift-f", BringForward, c),
+        KeyBinding::new("ctrl-alt-shift-b", SendBackward, c),
+        KeyBinding::new("alt-shift-f", CopySize, c),
+        KeyBinding::new("alt-shift-v", PasteSize, c),
+        KeyBinding::new("ctrl-shift-y", Autosize, c),
+        KeyBinding::new("left", NudgeLeft, c),
+        KeyBinding::new("right", NudgeRight, c),
+        KeyBinding::new("up", NudgeUp, c),
+        KeyBinding::new("down", NudgeDown, c),
+        KeyBinding::new("shift-left", NudgeLeftGrid, c),
+        KeyBinding::new("shift-right", NudgeRightGrid, c),
+        KeyBinding::new("shift-up", NudgeUpGrid, c),
+        KeyBinding::new("shift-down", NudgeDownGrid, c),
+        KeyBinding::new("ctrl-left", GrowLeft, c),
+        KeyBinding::new("ctrl-right", GrowRight, c),
+        KeyBinding::new("ctrl-up", GrowUp, c),
+        KeyBinding::new("ctrl-down", GrowDown, c),
+        KeyBinding::new("ctrl-shift-left", GrowLeftGrid, c),
+        KeyBinding::new("ctrl-shift-right", GrowRightGrid, c),
+        KeyBinding::new("ctrl-shift-up", GrowUpGrid, c),
+        KeyBinding::new("ctrl-shift-down", GrowDownGrid, c),
+    ]);
+}

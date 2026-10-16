@@ -1,0 +1,67 @@
+//! GPUI actions and key contexts.
+
+use gpui_kit::actions;
+
+actions!(
+    openplant,
+    [
+        NewProject,
+        OpenFile,
+        SaveFile,
+        SaveAs,
+        Quit,
+        Undo,
+        Redo,
+        Cut,
+        Copy,
+        Paste,
+        Duplicate,
+        DeleteSel,
+        DeleteAll,
+        SelectAll,
+        SelectNone,
+        SelectVertices,
+        SelectEdges,
+        SelectNext,
+        SelectPrev,
+        EditLabel,
+        Cancel,
+        ToFront,
+        ToBack,
+        BringForward,
+        SendBackward,
+        CopySize,
+        PasteSize,
+        Autosize,
+        NudgeLeft,
+        NudgeRight,
+        NudgeUp,
+        NudgeDown,
+        NudgeLeftGrid,
+        NudgeRightGrid,
+        NudgeUpGrid,
+        NudgeDownGrid,
+        GrowLeft,
+        GrowRight,
+        GrowUp,
+        GrowDown,
+        GrowLeftGrid,
+        GrowRightGrid,
+        GrowUpGrid,
+        GrowDownGrid,
+        ZoomIn,
+        ZoomOut,
+        ResetView,
+        FitWindow,
+        ToggleGrid,
+        ToggleOutline,
+        ToggleFormat,
+        ToggleShapes,
+        Palette,
+        Shortcuts,
+    ]
+);
+
+pub const CANVAS: &str = "Canvas";
+
+pub const ROOT: &str = "OpenPlant";
