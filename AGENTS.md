@@ -1,98 +1,50 @@
 # OpenPlant — agent rules
 
-Native Rust desktop app (StarUML / draw.io alternative) built on GPUI via
-`gpui-kit` 0.7 (gpui-pre + gpui-component). One crate at the repo root,
-binary `openplant`. Full Rust: no web frontend, no Tauri, no Node/Bun.
+Native Rust desktop app (alternatif StarUML / draw.io) di atas GPUI via
+`gpui-kit` 0.7. Satu crate di repo root, binary `openplant`.
+Full Rust: tanpa web frontend, Tauri, atau Node/Bun.
+Lisensi AGPL-3.0-or-later (`LICENSE`, field `license` di `Cargo.toml`).
+Komunikasi dengan user dalam Bahasa Indonesia.
 
-## Non-negotiables
+## Perintah (Cargo only)
 
-- **Cargo only.** `cargo build`, `cargo test`,
-  `cargo run -- [diagram.puml | project.json]`. Release: `cargo build --release`.
-- **Warning-free build and green `cargo test`** before calling work done.
-- **Speed + lightweight is priority #1.** Dependencies are gpui-kit, serde,
-  serde_json, regex, resvg (PNG export, already pulled in by GPUI) and ureq
-  (AI generator). No extra UI frameworks, canvas libs or icon packs: icons are
-  path ops in `src/icons.rs`, the canvas is painted by hand in `src/diagram.rs`.
-- **UI stays matching `shots/`.** Those screenshots (1600x900) are the
-  reference look: Everblush palette (`src/theme.rs`), StarUML layout
-  (menu bar, sidebar, canvas, tool strip, navigator, drawer, status bar).
-- **draw.io keyboard shortcuts.** Keymap lives in `src/commands.rs`. Editing
-  keys are bound in the `Canvas` key context so typing in a field never edits
-  the diagram; global keys use the `OpenPlant` context.
-- **PlantUML renders on our own canvas.** Parser + layout in
-  `src/plantuml.rs`. Never add a PlantUML server/jar preview or split view.
-- **Clean-room.** StarUML and draw.io are behaviour/layout references only.
-  Never copy their code, assets, icons or fonts.
+- `cargo build`, `cargo test`, `cargo run -- [diagram.puml | project.json]`
+- Rilis: `cargo build --release`
+- Wajib sebelum kerja dianggap selesai: build bebas warning + `cargo test` hijau.
+- Build pertama lambat (~5 mnt: GPUI + wgpu); incremental hitungan detik.
+- `target/` besar (~9 GB) dan di-gitignore — jangan pernah commit.
 
-## Architecture (`src/`)
+## Batasan
 
-- `model.rs` — project/diagram/shape/relation types (camelCase JSON on disk).
-- `toolbox.rs` — tool groups, diagram kinds, default shape sizes.
-- `plantuml.rs` — PlantUML subset parse (grouped layout, notes, `' pos`
-  comments) and generate; round-trip tested on `sample-puml/`.
-- `workbench.rs` — the single state struct: project, selection, view,
-  panels, clipboard, undo/redo (`checkpoint()` once per user gesture).
-- `commands.rs` — actions, keymap, menus, palette list, shortcut sheet.
-- `diagram.rs` — routing, hit testing, shape/edge painting, minimap, thumbs.
-- `app.rs` — root view: canvas interaction state machine (`Drag`), command
-  dispatch (`run(id)`), file dialogs, PlantUML two-way sync, inline editing.
-- `ui.rs` — region rendering, one method per workbench region.
-- `export.rs` — standalone SVG and PNG (resvg) of the active diagram.
-- `settings.rs` — prefs at `$XDG_CONFIG_HOME/openplant/settings.json`.
-- `ai.rs` — AI generator (OpenAI-compatible chat API; Ollama or cloud).
+- Prioritas #1: cepat + ringan. Dependensi tetap: gpui-kit, serde,
+  serde_json, regex, resvg, ureq. Tanpa UI framework, canvas lib, icon pack.
+- Ikon = path ops di `src/ui/icons.rs`; kanvas digambar manual di `src/canvas/`.
+- Keymap gaya draw.io di `src/commands/keymap.rs`: editing keys konteks
+  `Canvas` (agar mengetik di field tak mengedit diagram), global `OpenPlant`.
+- PlantUML render di kanvas sendiri (`src/plantuml/`). Jangan tambah
+  server/jar/preview split.
+- Clean-room: StarUML/draw.io hanya referensi perilaku — jangan salin
+  kode, aset, ikon, atau font.
 
-## TODO (belum diimplementasi — jangan lupa)
+## Arsitektur (`src/`)
 
-- **Render PlantUML lebih faithful di canvas sendiri**: warna dari
-  `skinparam`, legend, layout berperingkat (ikut arah relasi dan
-  `left to right direction`), member class (atribut/operasi),
-  stereotype, multiplicity.
-- **Diagram selain class**: sequence, usecase, activity, component,
-  deployment, statechart (canvas + toolbox per-diagram).
-- **Rename diagram langsung** dari daftar working diagrams (sekarang lewat
-  properti `name`).
-- **Context menu lanjutan**: submenu Format, Open Sub-Diagram,
-  Tag Editor.
-  - Submenu Add: AWS Model, Azure Model, GCP Model (cloud models).
-  - Submenu Format (penuh, sesuai StarUML): Font... (Ctrl+Shift+F),
-    Fill Color... (Ctrl+Shift+I), Line Color... (Ctrl+Shift+L),
-    Line Style, Auto Resize (Ctrl+Shift+R), Show Shadow ✓
-    (Ctrl+Shift+H), Inherit Style (Ctrl+Shift+K), Stereotype Display >,
-    Word Wrap (Ctrl+Shift+W), Show Visibility (V), Show Namespace (N),
-    Show Property (B), Show Type (Y), Show Multiplicity (M),
-    Show Operation Signature (J), Show Diagram Name (D),
-    Suppress Attributes (A), Suppress Operations (O),
-    Suppress Receptions (E), Suppress Literals (T),
-    Suppress Property Values, Suppress Constraints, Suppress Parts,
-    Suppress Ports, Suppress References, Suppress Values,
-    Suppress Properties, Suppress Flow Properties,
-    Suppress Columns (Ctrl+Shift+U).
-    Catatan: beberapa shortcut StarUML ini bentrok dengan draw.io
-    (Ctrl+Shift+F/H/K); draw.io menang.
-- **Extension system real**: registry, install/enable, API untuk
-  menambah menu/toolbox (saat ini daftar statis).
-- **Validation rules lanjutan** di luar cek dasar.
-- **Print & HTML export** (StarUML punya). SVG/PNG sudah ada.
-- **Search explorer**: sort sudah ada; tambah filter by kind.
-- **i18n** (StarUML multi-bahasa).
-- **MCP server ala plantuml-mcp/LightCraft**: expose OpenPlant lewat
-  Model Context Protocol (stdio + HTTP) supaya agen eksternal
-  (OpenCode lokal, Claude) bisa drive aplikasi: `diagram.list`,
-  `diagram.add_class`, `diagram.render`, dst. Lihat
-  `plantuml/plantuml-mcp` untuk pola transport-nya
-  (repo itu masih MVP 1-tool, jangan di-bundle — tiru polanya saja).
+- `main.rs` — entry, window 1600x900
+- `theme.rs` — palet Everblush
+- `model/` — project/diagram/shape/relation (JSON camelCase), `toolbox.rs`
+- `plantuml/` — parse, layout, generate; round-trip test di `sample-puml/`
+- `workbench/` — state tunggal: selection, view, panels, clipboard,
+  undo/redo (`checkpoint()` sekali per aksi pengguna)
+- `commands/` — actions, keymap, menus, palette, shortcut sheet
+- `canvas/` — routing, hit test, painting shape/edge, minimap
+- `app/` — root view: state machine drag, dispatch `run(id)`, dialogs,
+  sync PlantUML, inline editing
+- `ui/` — render per region + drawer + overlays
+- `services/` — `export.rs` (SVG + PNG via resvg), `settings.rs`
+  (`~/.config/openplant/settings.json`), `ai.rs` (chat API
+  OpenAI-compatible; Ollama atau cloud)
+- `ui_tests/` — headless UI tests (`cargo test`)
 
-Sudah selesai di versi GPUI: undo/redo, cut/copy/paste/duplicate,
-multi-diagram (switch, tambah, hapus), PlantUML live sync dua arah,
-element picker, styles editor, shortcut draw.io lengkap, minimap
-interaktif (klik/drag), export SVG/PNG.
+## Keputusan yang sudah diambil
 
-## Workflow
-
-- First build is slow (~5 min: GPUI + wgpu); incremental builds take
-  seconds. `target/` is large (~9 GB debug); `cargo clean` reclaims it.
-- Visual check: compare against `shots/` at 1600x900.
-- Hyprland here uses the Lua config API: `hyprctl dispatch` takes Lua,
-  e.g. `hyprctl dispatch 'hl.dsp.window.fullscreen({ mode = "maximized" })'`.
-- The old React + Tauri build is archived at
-  `~/Documents/OpenPlant-react-tauri-backup-2026-10-16.tar.gz`.
+- Konflik shortcut StarUML vs draw.io (mis. `Ctrl+Shift+F/H/K`): draw.io menang.
+- Fitur user-facing + roadmap tinggal di `README.md`; jangan duplikasi di sini.
